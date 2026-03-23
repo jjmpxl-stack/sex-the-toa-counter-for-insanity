@@ -1,1 +1,80 @@
+package com.example.toainsanity;
 
+import java.awt.*;
+import javax.inject.Inject;
+
+import net.runelite.api.Client;
+import net.runelite.api.Point;
+import net.runelite.api.coords.WorldPoint;
+import net.runelite.client.ui.overlay.*;
+import net.runelite.client.ui.overlay.components.*;
+
+public class ToaInsanityOverlay extends Overlay
+{
+    @Inject
+    private Client client;
+
+    @Inject
+    private ToaInsanityPlugin plugin;
+
+    public ToaInsanityOverlay()
+    {
+        setPosition(OverlayPosition.DYNAMIC);
+        setLayer(OverlayLayer.ABOVE_SCENE);
+    }
+
+    @Override
+    public Dimension render(Graphics2D graphics)
+    {
+        renderTile(graphics, plugin.getLastTile(), Color.RED);
+        renderDirection(graphics);
+
+        renderTickCounter(graphics);
+
+        return null;
+    }
+
+    private void renderTile(Graphics2D graphics, WorldPoint point, Color color)
+    {
+        if (point == null)
+            return;
+
+        Polygon poly = Perspective.getCanvasTilePoly(client, point);
+        if (poly != null)
+        {
+            graphics.setColor(new Color(color.getRed(), color.getGreen(), color.getBlue(), 80));
+            graphics.fillPolygon(poly);
+
+            graphics.setColor(color);
+            graphics.drawPolygon(poly);
+        }
+    }
+
+    private void renderDirection(Graphics2D graphics)
+    {
+        WorldPoint last = plugin.getLastTile();
+        WorldPoint prev = plugin.getPreviousTile();
+
+        if (last == null || prev == null)
+            return;
+
+        int dx = last.getX() - prev.getX();
+        int dy = last.getY() - prev.getY();
+
+        WorldPoint nextApprox = new WorldPoint(
+            last.getX() + dx,
+            last.getY() + dy,
+            last.getPlane()
+        );
+
+        renderTile(graphics, nextApprox, Color.ORANGE);
+    }
+
+    private void renderTickCounter(Graphics2D graphics)
+    {
+        int ticks = plugin.getTickCounter();
+
+        graphics.setColor(Color.WHITE);
+        graphics.drawString("Tick: " + ticks, 20, 40);
+    }
+}
